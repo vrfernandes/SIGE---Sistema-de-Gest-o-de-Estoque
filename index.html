@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BEMISA • Controle de Estoque e Reparos (V2.3 - Dashboard com Gráficos)</title>
+<style>
+:root{
+  --primary:#7C9640; --primary-dark:#647a32; --secondary:#414042;
+  --bg:#f4f6f4; --surface:#ffffff; --text:#333; --muted:#777; --border:#e0e0e0;
+  --ok:#16a34a; --warn:#d97706; --danger:#dc2626; --info:#0ea5e9;
+  --radius:8px; --shadow:0 4px 6px rgba(0,0,0,.05);
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
+body{background:var(--bg);color:var(--text);padding-bottom:40px}
+header{background:var(--secondary);color:#fff;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.logo{font-weight:700;display:flex;align-items:center;gap:10px}
+.logo-dot{width:12px;height:12px;background:var(--primary);border-radius:50%}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);padding:6px 10px;border-radius:999px;font-size:.85rem}
+.user-pill b{color:#fff}
+
+nav#mainNav{display:flex;gap:8px;background:#fff;padding:8px 18px;border-bottom:1px solid var(--border);overflow-x:auto}
+nav#mainNav button{background:none;border:none;padding:8px 14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav#mainNav button.active{color:var(--primary);border-bottom-color:var(--primary)}
+nav#mainNav button:hover:not(.active){color:var(--secondary)}
+
+.subnav{display:none;gap:6px;background:#f9faf9;padding:6px 18px;border-bottom:1px solid var(--border);overflow-x:auto}
+.subnav.active{display:flex}
+.subnav .subbtn{background:none;border:none;padding:6px 10px;font-weight:600;color:var(--muted);cursor:pointer;border:1px solid transparent;border-radius:6px}
+.subnav .subbtn.active{color:#fff;background:var(--primary);border-color:var(--primary)}
+.subnav .subbtn:hover:not(.active){color:var(--secondary);border-color:var(--border)}
+
+.container{max-width:1200px;margin:18px auto;padding:0 18px}
+.view{display:none;animation:fade .25s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+.panel{background:var(--surface);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:18px;overflow-x:auto}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+
+table{width:100%;border-collapse:collapse;min-width:800px}
+th,td{padding:10px;text-align:left;border-bottom:1px solid var(--border);font-size:.92rem}
+th{background:#f9faf9;color:var(--secondary);font-weight:600}
+
+.btn{padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-weight:600;font-size:.85rem;transition:.2s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-secondary{background:var(--secondary);color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:4px 8px;font-size:.75rem}
+
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:10px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+
+.badge{padding:4px 8px;border-radius:12px;font-size:.74rem;font-weight:700;color:#fff;display:inline-block}
+.bg-ok{background:var(--ok)} .bg-warn{background:var(--warn)}
+.bg-danger{background:var(--danger)} .bg-info{background:var(--info)} .bg-muted{background:var(--muted)}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;justify-content:center;align-items:center;z-index:1000}
+.modal-overlay.active{display:flex}
+.modal{background:#fff;padding:24px;border-radius:10px;width:92%;max-width:860px;max-height:90vh;overflow:auto}
+.modal h2{margin-bottom:12px;color:var(--secondary)}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap}
+
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+.stat-box{background:#fff;padding:14px;border-radius:10px;border-left:4px solid var(--secondary);box-shadow:var(--shadow)}
+.stat-box.alert{border-left-color:var(--danger)}
+.stat-box h4{color:var(--muted);font-size:.85rem;margin-bottom:4px}
+.stat-box .val{font-size:1.4rem;font-weight:800;color:var(--secondary)}
+
+.kv{display:grid;grid-template-columns:140px 1fr;gap:8px;align-items:start}
+.kv div{padding:2px 0}
+
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.step{padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-weight:800;font-size:.8rem;color:var(--muted);background:#fff;cursor:pointer;user-select:none}
+.step:hover{border-color:#cfcfcf;transform:translateY(-1px)}
+.step.done{background:#eaf6ec;color:var(--ok);border-color:#bfe6c7}
+.step.current{background:#fff7ed;color:var(--warn);border-color:#fed7aa}
+.step.viewing{outline:2px solid rgba(14,165,233,.35)}
+
+hr{border:0;border-top:1px solid var(--border);margin:14px 0}
+.small{font-size:.85rem;color:var(--muted)}
+
+.readonly{opacity:.95}
+.readonly input,.readonly textarea,.readonly select{background:#f8fafc}
+
+/* DASHBOARD */
+.dash-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.grid-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+.chart-wrap{background:var(--surface);border-radius:var(--radius);padding:14px;border:1px solid var(--border)}
+.chart-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.chart-title h3{font-size:1rem;color:var(--secondary)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.legend .l{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted)}
+.legend .dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+.canvas{width:100%;height:260px;display:block}
+.item-focus{background:#f9faf9;border:1px dashed var(--border);border-radius:10px;padding:12px;margin-top:10px}
+.item-focus b{color:var(--secondary)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-dot"></div>BEMISA • Controle de Estoque e Reparos</div>
+  <div class="header-right">
+    <div class="user-pill">Usuário: <b id="userName">Admin</b></div>
+    <button class="btn btn-outline btn-sm" onclick="abrirModalUsuario(true)">Trocar usuário</button>
+  </div>
+</header>
+
+<nav id="mainNav">
+  <button class="active" onclick="switchMain('inicio', event)">🏠 Início</button>
+  <button onclick="switchMain('estoque', event)">📦 Estoque</button>
+  <button onclick="switchMain('compras', event)">🧾 Compras</button>
+  <button onclick="switchMain('reparo', event)">🔧 Reparo Externo</button>
+</nav>
+
+<div id="subnav-inicio" class="subnav active">
+  <button class="subbtn active" onclick="switchSub('inicio','dashboard', event)">📊 Dashboard</button>
+</div>
+<div id="subnav-estoque" class="subnav">
+  <button class="subbtn active" onclick="switchSub('estoque','itens', event)">📦 Itens em Estoque</button>
+  <button class="subbtn" onclick="switchSub('estoque','mov', event)">🔁 Movimentações</button>
+  <button class="subbtn" onclick="switchSub('estoque','sa', event)">📄 SA</button>
+</div>
+<div id="subnav-compras" class="subnav">
+  <button class="subbtn active" onclick="switchSub('compras','gerar', event)">⚡ Gerar RC</button>
+  <button class="subbtn" onclick="switchSub('compras','rc', event)">🗂️ Lista de RC</button>
+  <button class="subbtn" onclick="switchSub('compras','pc', event)">📬 Lista de PC</button>
+</div>
+<div id="subnav-reparo" class="subnav">
+  <button class="subbtn active" onclick="switchSub('reparo','enviar', event)">📮 Enviar para Reparo</button>
+  <button class="subbtn" onclick="switchSub('reparo','ativos', event)">🛠️ Itens em Reparo</button>
+  <button class="subbtn" onclick="switchSub('reparo','historico', event)">📜 Histórico de Reparo</button>
+</div>
+
+<div class="container">
+
+  <!-- DASHBOARD -->
+  <section id="view-inicio-dashboard" class="view active">
+    <h2 style="margin-bottom:14px">Dashboard</h2>
+
+    <div class="stats-row" id="dashboard-stats"></div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Filtros do Dashboard</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="resetDashboardFilters()">Limpar filtros</button>
+          <button class="btn btn-outline btn-sm" onclick="renderDashboard()">Atualizar</button>
+          <button class="btn btn-outline btn-sm" onclick="abrirModalDiagnosticoRC()">Diagnóstico RC</button>
+        </div>
+      </div>
+
+      <div class="dash-filters">
+        <div>
+          <label>Item (Estoque)</label>
+          <select id="dash-filter-item" onchange="renderDashboard()"></select>
+        </div>
+        <div>
+          <label>Criticidade (Estoque)</label>
+          <select id="dash-filter-crit" onchange="renderDashboard()">
+            <option value="ALL" selected>Todas</option>
+            <option value="Alta">Alta</option>
+            <option value="Média">Média</option>
+            <option value="Baixa">Baixa</option>
+          </select>
+        </div>
+        <div>
+          <label>Reparo: Etapa</label>
+          <select id="dash-filter-rep-stage" onchange="renderDashboard()">
+            <option value="ALL" selected>Todas</option>
+            <option value="Envio">Envio</option>
+            <option value="Peritagem">Peritagem</option>
+            <option value="Aprovação">Aprovação</option>
+            <option value="Execução">Execução</option>
+            <option value="Retorno">Retorno</option>
+          </select>
+        </div>
+        <div>
+          <label>Reparo: Status</label>
+          <select id="dash-filter-rep-status" onchange="renderDashboard()">
+            <option value="ATIVOS" selected>Somente Ativos</option>
+            <option value="TODOS">Ativos + Concluídos</option>
+            <option value="CONCLUIDOS">Somente Concluídos</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="dash-item-focus" class="item-focus" style="display:none"></div>
+    </div>
+
+    <div class="grid-charts">
+      <div class="chart-wrap">
+        <div class="chart-title"><h3>Itens abaixo do mínimo por criticidade (barras empilhadas)</h3></div>
+        <canvas id="chart-belowmin-crit" class="canvas"></canvas>
+        <div class="legend">
+          <div class="l"><span class="dot" style="background:#dc2626"></span>Alta</div>
+          <div class="l"><span class="dot" style="background:#d97706"></span>Média</div>
+          <div class="l"><span class="dot" style="background:#0ea5e9"></span>Baixa</div>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-title"><h3>Itens em estoque: abaixo do mínimo vs dentro do mínimo (pizza)</h3></div>
+        <canvas id="chart-pie-below-ok" class="canvas"></canvas>
+        <div class="legend">
+          <div class="l"><span class="dot" style="background:#dc2626"></span>Abaixo do mínimo</div>
+          <div class="l"><span class="dot" style="background:#16a34a"></span>Dentro do mínimo</div>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-title"><h3>Status do estoque (Normal / Risco Futuro / Abaixo do mínimo)</h3></div>
+        <canvas id="chart-status3" class="canvas"></canvas>
+        <div class="legend">
+          <div class="l"><span class="dot" style="background:#16a34a"></span>Normal</div>
+          <div class="l"><span class="dot" style="background:#d97706"></span>Risco Futuro</div>
+          <div class="l"><span class="dot" style="background:#dc2626"></span>Abaixo do mínimo</div>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-title"><h3>Top itens por déficit (mínimo − saldo futuro)</h3></div>
+        <canvas id="chart-top-deficit" class="canvas"></canvas>
+        <p class="small" style="margin-top:8px">Os itens com maior risco considerando fila e compras em andamento.</p>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-title"><h3>Reparos por etapa atual</h3></div>
+        <canvas id="chart-repair-stages" class="canvas"></canvas>
+        <p class="small" style="margin-top:8px">Considera os filtros de etapa e status acima.</p>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-title"><h3>Reparos atrasados (Top por dias de atraso)</h3></div>
+        <canvas id="chart-repair-overdue" class="canvas"></canvas>
+        <p class="small" style="margin-top:8px">Atraso = dias desde envio − prazo do reparo (dias). Só conta quando o prazo estiver preenchido.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ESTOQUE / ITENS -->
+  <section id="view-estoque-itens" class="view">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>📦 Itens em Estoque</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="gerarRCGlobal()">⚡ Gerar RC em Massa (Abaixo do Mínimo)</button>
+          <button class="btn btn-outline" onclick="abrirModalDiagnosticoRC()">🔎 Diagnóstico</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Código</th><th>Descrição</th><th>Crit.</th><th>Saldo Atual</th>
+            <th>Fila (Pend.)</th><th>Em PC</th><th>Saldo Futuro</th><th>Mín/Máx</th><th>Status</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="table-estoque"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ESTOQUE / MOVIMENTAÇÕES -->
+  <section id="view-estoque-mov" class="view">
+    <div class="panel">
+      <div class="panel-header"><h2>🔁 Movimentações</h2></div>
+      <table>
+        <thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th>Qtd</th><th>Origem</th><th>Responsável</th></tr></thead>
+        <tbody id="table-movimentacoes"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ESTOQUE / SA -->
+  <section id="view-estoque-sa" class="view">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>📄 Solicitações de Almoxarifado (SA)</h2>
+        <button class="btn btn-secondary" onclick="abrirModalSA()">+ Nova SA</button>
+      </div>
+      <table>
+        <thead><tr><th>ID SA</th><th>Data</th><th>Solicitante</th><th>Prioridade</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="table-sa"></tbody>
+      </table>
+      <p class="small" style="margin-top:10px">Obs.: SA registra o solicitante do material; as movimentações registram o <b>usuário logado</b> como responsável pela ação no sistema.</p>
+    </div>
+  </section>
+
+  <!-- COMPRAS / GERAR -->
+  <section id="view-compras-gerar" class="view">
+    <div class="panel">
+      <div class="panel-header"><h2>⚡ Gerar Requisição de Compra (RC)</h2></div>
+      <p class="small">A RC em massa considera o <b>Saldo Futuro Projetado</b> (saldo atual + em compra − pendências) e gera uma RC agrupada para itens abaixo do mínimo, evitando duplicidade de RC.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn btn-primary" onclick="gerarRCGlobal()">⚡ Gerar RC em Massa</button>
+        <button class="btn btn-outline" onclick="abrirModalDiagnosticoRC()">🔎 Diagnóstico RC Global</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPRAS / LISTA RC -->
+  <section id="view-compras-rc" class="view">
+    <div class="panel">
+      <div class="panel-header"><h2>🗂️ Lista de Requisições de Compra (RC)</h2></div>
+      <table>
+        <thead><tr><th>ID RC</th><th>Data</th><th>Itens</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="table-rc"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- COMPRAS / LISTA PC -->
+  <section id="view-compras-pc" class="view">
+    <div class="panel">
+      <div class="panel-header"><h2>📬 Lista de Pedidos de Compra (PC)</h2></div>
+      <table>
+        <thead><tr><th>ID PC</th><th>Origem (RC)</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="table-pc"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- REPARO / ENVIAR -->
+  <section id="view-reparo-enviar" class="view">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>📮 Enviar para Reparo</h2>
+        <button class="btn btn-secondary" onclick="abrirModalReparoNovo()">+ Criar Reparo</button>
+      </div>
+      <p class="small">Fluxo de etapas obrigatório: <b>Envio → Peritagem → Aprovação → Execução → Retorno</b>. O reparo só pode ser concluído após passar por todas as etapas.</p>
+    </div>
+  </section>
+
+  <!-- REPARO / ATIVOS -->
+  <section id="view-reparo-ativos" class="view">
+    <div class="panel">
+      <div class="panel-header"><h2>🛠️ Itens em Reparo (Ativos)</h2></div>
+      <table>
+        <thead><tr><th>ID</th><th>Item</th><th>Fornecedor</th><th>Etapa Atual</th><th>Data Envio</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="table-reparo"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- REPARO / HISTÓRICO -->
+  <section id="view-reparo-historico" class="view">
+    <div class="panel">
+      <div class="panel-header"><h2>📜 Histórico de Reparo</h2></div>
+      <table>
+        <thead><tr><th>ID</th><th>Item</th><th>Fornecedor</th><th>Etapa Final</th><th>Data Envio</th><th>Data Conclusão</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="table-reparo-hist"></tbody>
+      </table>
+      <p class="small" style="margin-top:10px">Em reparos concluídos, clique em <b>Detalhar</b> e depois clique nas etapas para visualizar os dados registrados em cada fase.</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- MODAL: Usuário -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal" style="max-width:520px">
+    <h2>Identificação do Usuário</h2>
+    <p class="small">Informe quem está utilizando o sistema. Esse nome aparecerá no topo e será registrado como responsável nas novas movimentações e aprovações.</p>
+    <label>Nome do usuário</label>
+    <input type="text" id="user-input" placeholder="Ex.: Marcela, Gabrielly...">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="cancelarUsuario()">Agora não</button>
+      <button class="btn btn-primary" onclick="salvarUsuario()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAIS: SA -->
+<div class="modal-overlay" id="modal-nova-sa">
+  <div class="modal">
+    <h2>Criar Nova SA</h2>
+    <div class="form-row">
+      <div><label>Solicitante</label><input type="text" id="sa-solicitante" placeholder="Nome da pessoa/área"></div>
+      <div><label>Prioridade</label>
+        <select id="sa-prioridade"><option value="Alta">Alta</option><option value="Média" selected>Média</option><option value="Baixa">Baixa</option></select>
+      </div>
+    </div>
+    <label>Item</label><select id="sa-item"></select>
+    <label>Quantidade</label><input type="number" id="sa-qtd" min="1" value="1">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="fecharModal('modal-nova-sa')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarSA()">Criar SA</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-atender-sa">
+  <div class="modal">
+    <h2>Atender Solicitação (SA)</h2>
+    <p id="atender-sa-info" style="margin-bottom:10px"></p>
+    <label>Quantidade a Entregar Agora:</label>
+    <input type="number" id="atender-sa-qtd" min="0">
+    <p class="small" style="color:var(--danger)">* Entrega parcial mantém restante na Fila (Pendência).</p>
+    <input type="hidden" id="atender-sa-id">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="fecharModal('modal-atender-sa')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarAtendimentoSA()">Confirmar Baixa</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAIS: PC -->
+<div class="modal-overlay" id="modal-receber-pc">
+  <div class="modal">
+    <h2>Recebimento de PC</h2>
+    <p id="receber-pc-info" style="margin-bottom:10px"></p>
+    <div id="receber-pc-items"></div>
+    <input type="hidden" id="receber-pc-id">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="fecharModal('modal-receber-pc')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarRecebimentoPC()">Confirmar Entrada</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Diagnóstico RC Global -->
+<div class="modal-overlay" id="modal-diag-rc">
+  <div class="modal">
+    <h2>Diagnóstico da RC em Massa</h2>
+    <p class="small">Regra: <b>Saldo Futuro Projetado &lt; Mínimo</b> e <b>não existir RC pendente</b> para o item.</p>
+    <div id="diag-rc-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="fecharModal('modal-diag-rc')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAIS: Reparo -->
+<div class="modal-overlay" id="modal-reparo-novo">
+  <div class="modal">
+    <h2>Criar Reparo Externo</h2>
+    <div class="form-row">
+      <div>
+        <label>Item</label>
+        <select id="rep-item"></select>
+      </div>
+      <div>
+        <label>Quantidade</label>
+        <input type="number" id="rep-qtd" min="1" value="1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div><label>Fornecedor</label><input type="text" id="rep-fornecedor" placeholder="Empresa / Prestador"></div>
+      <div><label>Nº OS / Referência</label><input type="text" id="rep-os" placeholder="Opcional"></div>
+    </div>
+    <label>Problema Relatado</label>
+    <textarea id="rep-problema" rows="3" placeholder="Descreva a falha / sintoma"></textarea>
+    <div class="form-row">
+      <div><label>Prazo (Lead time do reparo em dias)</label><input type="number" id="rep-lead" min="0" value="0"></div>
+      <div><label>Custo Estimado (R$)</label><input type="number" id="rep-custo" min="0" value="0"></div>
+    </div>
+    <label>Observações</label>
+    <textarea id="rep-obs" rows="2" placeholder="Informações adicionais"></textarea>
+
+    <hr>
+    <p class="small"><b>Etapa inicial:</b> Envio (registrado automaticamente ao salvar).</p>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="fecharModal('modal-reparo-novo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarReparoNovo()">Salvar Reparo</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-reparo-detalhe">
+  <div class="modal">
+    <h2>Detalhamento do Reparo</h2>
+    <input type="hidden" id="rep-det-id">
+    <input type="hidden" id="rep-det-viewIndex">
+
+    <div id="rep-det-header"></div>
+    <div class="steps" id="rep-det-steps"></div>
+
+    <hr>
+    <h3 style="margin-bottom:8px">Campos do Reparo</h3>
+    <div class="form-row">
+      <div><label>Fornecedor</label><input type="text" id="rep-det-fornecedor"></div>
+      <div><label>Nº OS / Referência</label><input type="text" id="rep-det-os"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Prazo do Reparo (dias)</label><input type="number" id="rep-det-lead" min="0"></div>
+      <div><label>Custo Estimado (R$)</label><input type="number" id="rep-det-custo" min="0"></div>
+    </div>
+    <label>Problema Relatado</label>
+    <textarea id="rep-det-problema" rows="3"></textarea>
+    <label>Observações</label>
+    <textarea id="rep-det-obs" rows="2"></textarea>
+
+    <hr>
+    <h3 style="margin-bottom:8px">Dados da Etapa Selecionada</h3>
+    <div id="rep-det-stage-fields"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="fecharModal('modal-reparo-detalhe')">Fechar</button>
+      <button class="btn btn-secondary" id="btn-salvar-reparo" onclick="salvarEdicaoReparo()">Salvar Alterações</button>
+      <button class="btn btn-primary" id="btn-aprovar-etapa" onclick="aprovarEtapaReparo()">Aprovar (Auto)</button>
+      <button class="btn btn-primary" id="btn-avancar-etapa" onclick="avancarEtapaReparo()">Avançar Etapa</button>
+      <button class="btn btn-primary" id="btn-concluir-reparo" onclick="concluirRetornoReparo()">Concluir Retorno</button>
+    </div>
+
+    <p class="small" style="margin-top:10px" id="rep-det-hint"></p>
+  </div>
+</div>
+
+<script>
+/* =========================
+   USUÁRIO (Login simples)
+   ========================= */
+let currentUser = 'Admin';
+const USER_KEY = 'manutencao_user';
+
+function setUser(name){
+  currentUser = (name || '').trim() || 'Admin';
+  document.getElementById('userName').textContent = currentUser;
+}
+
+function abrirModalUsuario(force=false){
+  const saved = localStorage.getItem(USER_KEY);
+  if(!force && saved){
+    setUser(saved);
+    return;
+  }
+  const input = document.getElementById('user-input');
+  input.value = force ? (localStorage.getItem(USER_KEY) || currentUser || '') : '';
+  document.getElementById('modal-usuario').classList.add('active');
+  setTimeout(()=>input.focus(), 100);
+}
+
+function salvarUsuario(){
+  const name = document.getElementById('user-input').value.trim();
+  if(!name) return alert('Informe o nome do usuário.');
+  localStorage.setItem(USER_KEY, name);
+  setUser(name);
+  fecharModal('modal-usuario');
+}
+
+function cancelarUsuario(){
+  const saved = localStorage.getItem(USER_KEY);
+  if(saved) setUser(saved);
+  fecharModal('modal-usuario');
+}
+
+/* =========================
+   DADOS & REGRAS
+   ========================= */
+let db = { items:[], sa:[], rc:[], pc:[], repairs:[], movements:[] };
+const STORAGE_KEY = 'manutencao_db';
+
+function initDB(){
+  const savedUser = localStorage.getItem(USER_KEY);
+  if(savedUser) setUser(savedUser);
+  else abrirModalUsuario(true);
+
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if(saved){ db = JSON.parse(saved); }
+  else { seedDatabase(); }
+
+  migrateMovements();
+  migrateRepairs();
+  atualizarTelas();
+}
+
+function saveDB(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); atualizarTelas(); }
+
+function seedDatabase(){
+  db.items = [
+    { id:'ITM001', desc:'Rolamento SKF 6204', crit:'Alta',  stock:5,  leadTime:15, consMonth:20 },
+    { id:'ITM002', desc:'Correia em V B-45',   crit:'Média', stock:12, leadTime:7,  consMonth:30 },
+    { id:'ITM003', desc:'Filtro de Óleo Hidráulico', crit:'Baixa', stock:3, leadTime:10, consMonth:5 },
+    { id:'ITM004', desc:'Motor Elétrico 5CV',  crit:'Alta',  stock:1,  leadTime:45, consMonth:1 }
+  ];
+  saveDB();
+}
+
+function parseDateToTs(str){
+  if(!str) return 0;
+  const d1 = new Date(str);
+  if(!isNaN(d1.getTime())) return d1.getTime();
+  try{
+    const parts = str.split(' ');
+    const date = parts[0];
+    const time = parts[1] || '00:00:00';
+    const [dd,mm,yyyy] = date.split('/').map(x=>parseInt(x,10));
+    const [HH,MM,SS] = time.split(':').map(x=>parseInt(x,10));
+    const d2 = new Date(yyyy, (mm||1)-1, dd||1, HH||0, MM||0, SS||0);
+    if(!isNaN(d2.getTime())) return d2.getTime();
+  }catch(e){}
+  return 0;
+}
+
+function migrateMovements(){
+  if(!Array.isArray(db.movements)) db.movements = [];
+  db.movements.forEach(m=>{ if(!m.user) m.user = '—'; });
+}
+
+function registrarMovimento(tipo,itemId,qtd,origem){
+  db.movements.unshift({
+    id:'MOV'+Date.now(),
+    date:new Date().toLocaleString(),
+    tipo,
+    itemId,
+    qtd,
+    origem,
+    user: currentUser || 'Admin'
+  });
+  if(db.movements.length>300) db.movements.pop();
+}
+
+/* === Cálculos estoque === */
+function getRegrasItem(itemId){
+  const item = db.items.find(i=>i.id===itemId);
+  if(!item) return null;
+
+  const consMonth = Number(item.consMonth ?? 0);
+  const leadTime = Number(item.leadTime ?? 0);
+
+  let safetyFactor = 0.1;
+  if(item.crit==='Média') safetyFactor = 0.2;
+  if(item.crit==='Alta') safetyFactor = 0.3;
+
+  let min = Math.ceil(((consMonth/30)*leadTime)*(1+safetyFactor));
+  if(!isFinite(min) || min<1) min = 1;
+  let max = min*2;
+
+  let inQueue = 0;
+  db.sa.filter(s=>s.status!=='Atendida' && s.status!=='Cancelada')
+    .forEach(s=>s.items.forEach(si=>{ if(si.itemId===itemId) inQueue += (si.qtdReq - si.qtdDeliver); }));
+
+  let inPC = 0;
+  db.pc.filter(p=>p.status!=='Concluído')
+    .forEach(p=>p.items.forEach(pi=>{ if(pi.itemId===itemId) inPC += (pi.qtyReq - pi.qtyReceived); }));
+
+  const stock = Number(item.stock ?? 0);
+  const futureStock = stock + inPC - inQueue;
+
+  return { min, max, inQueue, inPC, futureStock, stock };
+}
+
+function itemPrecisaRC(itemId){
+  const r = getRegrasItem(itemId);
+  if(!r) return { ok:false, reason:'Item não encontrado' };
+  const hasRC = db.rc.some(rc=>rc.status==='Pendente' && rc.items.some(i=>i.itemId===itemId));
+  if(hasRC) return { ok:false, reason:'Já existe RC pendente' , r };
+  if(r.futureStock < r.min){
+    const qtd = Math.max(1, (r.max - r.futureStock));
+    return { ok:true, r, qtd };
+  }
+  return { ok:false, reason:'Saldo futuro >= mínimo', r };
+}
+
+/* =========================
+   SA
+   ========================= */
+function abrirModalSA(){ preencherSelects(); document.getElementById('modal-nova-sa').classList.add('active'); }
+function salvarSA(){
+  const solicitante = document.getElementById('sa-solicitante').value.trim();
+  const prioridade  = document.getElementById('sa-prioridade').value;
+  const itemId      = document.getElementById('sa-item').value;
+  const qtd         = parseInt(document.getElementById('sa-qtd').value);
+  if(!solicitante || !itemId || !(qtd>0)) return alert('Preencha os dados corretamente.');
+
+  const hasPending = db.sa.some(s => s.solicitante===solicitante &&
+    s.status!=='Atendida' && s.status!=='Cancelada' &&
+    s.items.some(i=>i.itemId===itemId && (i.qtdReq - i.qtdDeliver)>0));
+  if(hasPending) return alert('Governança: este solicitante já possui SA pendente para este item.');
+
+  db.sa.push({
+    id:'SA-'+Math.floor(Math.random()*10000),
+    date:new Date().toLocaleString(), timestamp:Date.now(),
+    solicitante, prioridade, status:'Aberta',
+    createdBy: currentUser,
+    items:[{ itemId, qtdReq:qtd, qtdDeliver:0 }]
+  });
+  saveDB(); fecharModal('modal-nova-sa');
+}
+
+function abrirAtendimentoSA(saId){
+  const sa = db.sa.find(s=>s.id===saId);
+  const item = db.items.find(i=>i.id===sa.items[0].itemId);
+  const pend = sa.items[0].qtdReq - sa.items[0].qtdDeliver;
+  document.getElementById('atender-sa-info').innerHTML =
+    `<b>Item:</b> ${item.desc}<br><b>Estoque Atual:</b> ${item.stock}<br><b>Pendente nesta SA:</b> ${pend}<br><span class="small">Responsável pela baixa: <b>${currentUser}</b></span>`;
+  document.getElementById('atender-sa-id').value = saId;
+  document.getElementById('atender-sa-qtd').value = Math.min(item.stock, pend);
+  document.getElementById('modal-atender-sa').classList.add('active');
+}
+
+function confirmarAtendimentoSA(){
+  const saId = document.getElementById('atender-sa-id').value;
+  const qtdBaixa = parseInt(document.getElementById('atender-sa-qtd').value);
+  const sa = db.sa.find(s=>s.id===saId);
+  const saItem = sa.items[0];
+  const item = db.items.find(i=>i.id===saItem.itemId);
+  const pend = saItem.qtdReq - saItem.qtdDeliver;
+  if(qtdBaixa<0 || qtdBaixa>pend) return alert('Quantidade inválida.');
+  if(qtdBaixa>item.stock) return alert('Estoque físico insuficiente.');
+
+  if(qtdBaixa>0){
+    item.stock -= qtdBaixa;
+    saItem.qtdDeliver += qtdBaixa;
+    registrarMovimento('Saída (SA)', item.id, qtdBaixa, sa.id);
+  }
+
+  if(saItem.qtdDeliver===saItem.qtdReq) sa.status='Atendida';
+  else if(saItem.qtdDeliver>0) sa.status='Parcial';
+  else sa.status='Aguardando Estoque';
+
+  saveDB(); fecharModal('modal-atender-sa');
+}
+
+/* =========================
+   COMPRAS (RC/PC)
+   ========================= */
+function gerarRC(itemId){
+  const check = itemPrecisaRC(itemId);
+  if(!check.ok){
+    if(check.reason==='Já existe RC pendente') return alert('Já existe uma RC aberta para este item.');
+    return alert('Este item não está abaixo do mínimo projetado.');
+  }
+  db.rc.push({
+    id:'RC-'+Math.floor(Math.random()*10000),
+    date:new Date().toLocaleString(),
+    status:'Pendente',
+    createdBy: currentUser,
+    items:[{ itemId, qtdReq: check.qtd }]
+  });
+  saveDB();
+  alert('RC gerada com sucesso!');
+}
+
+function gerarRCGlobal(){
+  const itens = [];
+  db.items.forEach(it=>{
+    const check = itemPrecisaRC(it.id);
+    if(check.ok){ itens.push({ itemId: it.id, qtdReq: check.qtd }); }
+  });
+  if(itens.length===0){
+    const abaixo = db.items.filter(it=>{ const r=getRegrasItem(it.id); return r && r.futureStock < r.min; }).length;
+    const pendentes = db.rc.filter(rc=>rc.status==='Pendente').length;
+    return alert(`Nenhum item elegível para RC em massa.\nItens abaixo do mínimo: ${abaixo}.\nRCs pendentes atuais: ${pendentes}.\nUse o Diagnóstico para detalhes.`);
+  }
+  db.rc.push({
+    id:'RC-GRP-'+Math.floor(Math.random()*10000),
+    date:new Date().toLocaleString(),
+    status:'Pendente',
+    createdBy: currentUser,
+    items: itens
+  });
+  saveDB();
+  alert(`RC em massa gerada com ${itens.length} itens!`);
+}
+
+function aprovarRC(rcId){
+  const rc = db.rc.find(r=>r.id===rcId);
+  rc.status = 'Aprovada / PC Gerado';
+  rc.approvedBy = currentUser;
+  rc.approvedAt = new Date().toLocaleString();
+  db.pc.push({
+    id:'PC-'+Math.floor(Math.random()*10000),
+    rcId:rc.id,
+    date:new Date().toLocaleString(),
+    status:'Aberto',
+    createdBy: currentUser,
+    items: rc.items.map(i=>({ itemId:i.itemId, qtyReq:i.qtdReq, qtyReceived:0 }))
+  });
+  saveDB();
+}
+
+function abrirRecebimentoPC(pcId){
+  const pc = db.pc.find(p=>p.id===pcId);
+  document.getElementById('receber-pc-id').value = pcId;
+  document.getElementById('receber-pc-info').innerHTML = `<b>PC Nº:</b> ${pc.id}<br><span class="small">Responsável pelo recebimento: <b>${currentUser}</b></span>`;
+  let html = '';
+  pc.items.forEach((it,ix)=>{
+    const data = db.items.find(i=>i.id===it.itemId);
+    const pend = it.qtyReq - it.qtyReceived;
+    if(pend>0){
+      html += `
+      <div style="background:#f9f9f9;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #ddd;">
+        <b>${data.desc}</b><br>Solicitado: ${it.qtyReq} • Faltam: ${pend}<br>
+        <label>Qtd Recebida Agora:</label>
+        <input type="number" id="recv-qtd-${ix}" max="${pend}" min="0" value="${pend}" style="width:140px;margin-top:5px">
+      </div>`;
+    }
+  });
+  document.getElementById('receber-pc-items').innerHTML = html;
+  document.getElementById('modal-receber-pc').classList.add('active');
+}
+
+function confirmarRecebimentoPC(){
+  const pcId = document.getElementById('receber-pc-id').value;
+  const pc = db.pc.find(p=>p.id===pcId);
+  let total = 0;
+  pc.items.forEach((it,ix)=>{
+    const input = document.getElementById(`recv-qtd-${ix}`);
+    if(input){
+      const qtd = parseInt(input.value);
+      const pend = it.qtyReq - it.qtyReceived;
+      if(qtd>0 && qtd<=pend){
+        it.qtyReceived += qtd;
+        const item = db.items.find(i=>i.id===it.itemId);
+        item.stock += qtd;
+        registrarMovimento('Entrada (PC)', item.id, qtd, pc.id);
+        total += qtd;
+      }
+    }
+  });
+  if(total===0) return alert('Nenhuma quantidade válida informada.');
+  pc.status = pc.items.every(i=>i.qtyReceived>=i.qtyReq) ? 'Concluído' : 'Parcialmente Recebido';
+  saveDB(); fecharModal('modal-receber-pc');
+}
+
+function abrirModalDiagnosticoRC(){
+  let html = '<div class="panel" style="box-shadow:none;border:1px solid var(--border)">';
+  html += '<table style="min-width:980px"><thead><tr>'+
+          '<th>Item</th><th>Saldo</th><th>Fila</th><th>Em PC</th><th>Saldo Futuro</th><th>Mín</th><th>Elegível</th><th>Motivo</th>'+
+          '</tr></thead><tbody>';
+  db.items.forEach(it=>{
+    const r = getRegrasItem(it.id);
+    const check = itemPrecisaRC(it.id);
+    const motivo = check.ok ? `Qtd sugerida: ${check.qtd}` : (check.reason || '—');
+    html += `<tr>
+      <td><b>${it.id}</b> - ${it.desc}</td>
+      <td>${r.stock}</td><td>${r.inQueue}</td><td>${r.inPC}</td><td><b>${r.futureStock}</b></td><td>${r.min}</td>
+      <td>${check.ok ? '<span class="badge bg-ok">SIM</span>' : '<span class="badge bg-muted">NÃO</span>'}</td>
+      <td>${motivo}</td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('diag-rc-body').innerHTML = html;
+  document.getElementById('modal-diag-rc').classList.add('active');
+}
+
+/* =========================
+   REPARO EXTERNO (ETAPAS)
+   ========================= */
+const REPAIR_STAGES = ['Envio','Peritagem','Aprovação','Execução','Retorno'];
+
+function defaultStages(sendDateStr){
+  return [
+    { name:'Envio', done:true,  date:sendDateStr, details:'' },
+    { name:'Peritagem', done:false, date:'', details:'', report:'' },
+    { name:'Aprovação', done:false, date:'', details:'', approvedBy:'', decision:'' },
+    { name:'Execução', done:false, dateStart:'', dateEnd:'', details:'' },
+    { name:'Retorno', done:false, date:'', details:'' }
+  ];
+}
+
+function migrateRepairs(){
+  if(!Array.isArray(db.repairs)) db.repairs = [];
+  db.repairs.forEach(r=>{
+    if(!r.stages){
+      r.stages = defaultStages(r.sendDate || r.date || new Date().toLocaleString());
+      r.stageIndex = r.stageIndex ?? 0;
+      r.status = r.status || (r.concludedAt ? 'Concluído' : 'Ativo');
+    }
+    r.qty = parseInt(r.qty ?? r.qtd ?? 1);
+    r.provider = r.provider || r.fornecedor || 'Fornecedor Externo';
+    r.problem = r.problem || '';
+    r.osRef = r.osRef || '';
+    r.leadRepair = parseInt(r.leadRepair ?? 0);
+    r.costEst = parseFloat(r.costEst ?? 0);
+    r.notes = r.notes || '';
+    if(!r.createdBy) r.createdBy = '—';
+    if(!r.sendTs){
+      r.sendTs = parseDateToTs(r.sendDate) || Date.now();
+    }
+  });
+}
+
+function abrirModalReparoNovo(){
+  preencherSelects();
+  document.getElementById('rep-qtd').value = 1;
+  document.getElementById('rep-fornecedor').value = '';
+  document.getElementById('rep-os').value = '';
+  document.getElementById('rep-problema').value = '';
+  document.getElementById('rep-lead').value = 0;
+  document.getElementById('rep-custo').value = 0;
+  document.getElementById('rep-obs').value = '';
+  document.getElementById('modal-reparo-novo').classList.add('active');
+}
+
+function salvarReparoNovo(){
+  const itemId = document.getElementById('rep-item').value;
+  const qty = parseInt(document.getElementById('rep-qtd').value) || 1;
+  const provider = document.getElementById('rep-fornecedor').value.trim() || 'Fornecedor Externo';
+  const osRef = document.getElementById('rep-os').value.trim();
+  const problem = document.getElementById('rep-problema').value.trim();
+  const leadRepair = parseInt(document.getElementById('rep-lead').value) || 0;
+  const costEst = parseFloat(document.getElementById('rep-custo').value) || 0;
+  const notes = document.getElementById('rep-obs').value.trim();
+  if(!itemId) return alert('Selecione o item.');
+
+  const now = new Date().toLocaleString();
+  const rep = {
+    id:'REP-'+Math.floor(Math.random()*10000),
+    itemId,
+    qty,
+    provider,
+    osRef,
+    problem,
+    leadRepair,
+    costEst,
+    notes,
+    createdBy: currentUser,
+    createdAt: now,
+    sendDate: now,
+    sendTs: Date.now(),
+    stageIndex: 0,
+    stages: defaultStages(now),
+    status: 'Ativo',
+    concludedAt: ''
+  };
+  db.repairs.push(rep);
+  registrarMovimento('Registro (Reparo)', itemId, qty, rep.id);
+  saveDB();
+  fecharModal('modal-reparo-novo');
+  switchMain('reparo', {target:document.querySelectorAll('#mainNav button')[3]});
+  switchSub('reparo','ativos');
+}
+
+function abrirDetalheReparo(repId, viewIndex=null){
+  const rep = db.repairs.find(r=>r.id===repId);
+  if(!rep) return;
+  const vIndex = (viewIndex===null || viewIndex===undefined) ? rep.stageIndex : viewIndex;
+  document.getElementById('rep-det-id').value = repId;
+  document.getElementById('rep-det-viewIndex').value = vIndex;
+
+  const item = db.items.find(i=>i.id===rep.itemId);
+  document.getElementById('rep-det-header').innerHTML = `
+    <div class="kv">
+      <div><b>ID</b></div><div>${rep.id}</div>
+      <div><b>Item</b></div><div>${item?item.desc:rep.itemId} (Qtd: ${rep.qty})</div>
+      <div><b>Status</b></div><div>${rep.status}</div>
+      <div><b>Criado por</b></div><div>${rep.createdBy || '—'}</div>
+      <div><b>Data Envio</b></div><div>${rep.sendDate || rep.createdAt}</div>
+      <div><b>Etapa Atual</b></div><div><b>${REPAIR_STAGES[rep.stageIndex]}</b></div>
+      <div><b>Etapa Visualizada</b></div><div><b>${REPAIR_STAGES[vIndex]}</b></div>
+    </div>`;
+
+  const stepsEl = document.getElementById('rep-det-steps');
+  stepsEl.innerHTML = '';
+  rep.stages.forEach((s,ix)=>{
+    const cls = (ix===vIndex ? 'viewing' : '') + ' ' + (s.done ? 'done' : (ix===rep.stageIndex ? 'current' : ''));
+    const label = `${ix+1}. ${s.name}`;
+    const el = document.createElement('div');
+    el.className = 'step '+cls;
+    el.textContent = label;
+    el.onclick = ()=>abrirDetalheReparo(repId, ix);
+    stepsEl.appendChild(el);
+  });
+
+  document.getElementById('rep-det-fornecedor').value = rep.provider || '';
+  document.getElementById('rep-det-os').value = rep.osRef || '';
+  document.getElementById('rep-det-lead').value = rep.leadRepair || 0;
+  document.getElementById('rep-det-custo').value = rep.costEst || 0;
+  document.getElementById('rep-det-problema').value = rep.problem || '';
+  document.getElementById('rep-det-obs').value = rep.notes || '';
+
+  renderStageFields(rep, vIndex);
+  updateRepairButtons(rep, vIndex);
+
+  document.getElementById('modal-reparo-detalhe').classList.add('active');
+}
+
+function renderStageFields(rep, viewIndex){
+  const s = rep.stages[viewIndex];
+  let html = '';
+
+  const isConcluded = rep.status==='Concluído';
+  const isCurrent = viewIndex === rep.stageIndex && !isConcluded;
+  const readonly = !isCurrent;
+  const dis = readonly ? 'disabled' : '';
+
+  const wrapStart = `<div class="${readonly?'readonly':''}">`;
+  const wrapEnd = `</div>`;
+
+  if(viewIndex===0){
+    html += wrapStart;
+    html += `<p class="small"><b>Envio</b> registrado em: ${s.date || '—'}</p>`;
+    html += `<label>Detalhes do Envio</label><textarea id="stage-details" rows="2" ${dis} placeholder="Transportadora, NF, condição do item...">${s.details||''}</textarea>`;
+    html += wrapEnd;
+  }
+  if(viewIndex===1){
+    html += wrapStart;
+    html += `<label>Data da Peritagem</label><input type="text" id="stage-date" ${dis} placeholder="dd/mm/aaaa hh:mm" value="${s.date||''}">`;
+    html += `<label>Laudo / Relatório</label><textarea id="stage-report" rows="3" ${dis} placeholder="Resultado da inspeção, causa provável...">${s.report||''}</textarea>`;
+    html += `<label>Detalhes da Peritagem</label><textarea id="stage-details" rows="2" ${dis}>${s.details||''}</textarea>`;
+    html += wrapEnd;
+  }
+  if(viewIndex===2){
+    html += wrapStart;
+    html += `<label>Data da Aprovação</label><input type="text" id="stage-date" ${dis} placeholder="dd/mm/aaaa hh:mm" value="${s.date||''}">`;
+    html += `<div class="form-row">`;
+    html += `<div><label>Aprovado por</label><input type="text" id="stage-approvedBy" ${dis} value="${s.approvedBy||''}" placeholder="Auto"></div>`;
+    html += `<div><label>Decisão</label><select id="stage-decision" ${dis}>
+              <option value="" ${(!s.decision?'selected':'')}>Selecione</option>
+              <option value="Aprovado" ${(s.decision==='Aprovado'?'selected':'')}>Aprovado</option>
+              <option value="Reprovado" ${(s.decision==='Reprovado'?'selected':'')}>Reprovado</option>
+            </select></div>`;
+    html += `</div>`;
+    html += `<label>Detalhes da Aprovação</label><textarea id="stage-details" rows="2" ${dis}>${s.details||''}</textarea>`;
+    html += wrapEnd;
+    if(isCurrent){
+      html += `<p class="small" style="margin-top:8px">Clique em <b>“Aprovar (Auto)”</b> para registrar automaticamente: usuário logado, data/hora e decisão como <b>Aprovado</b>.</p>`;
+    }
+  }
+  if(viewIndex===3){
+    html += wrapStart;
+    html += `<div class="form-row"><div><label>Início da Execução</label><input type="text" id="stage-dateStart" ${dis} placeholder="dd/mm/aaaa hh:mm" value="${s.dateStart||''}"></div>`;
+    html += `<div><label>Fim da Execução</label><input type="text" id="stage-dateEnd" ${dis} placeholder="dd/mm/aaaa hh:mm" value="${s.dateEnd||''}"></div></div>`;
+    html += `<label>Detalhes da Execução</label><textarea id="stage-details" rows="3" ${dis} placeholder="Serviços realizados, peças trocadas, testes...">${s.details||''}</textarea>`;
+    html += wrapEnd;
+  }
+  if(viewIndex===4){
+    html += wrapStart;
+    html += `<label>Data do Retorno</label><input type="text" id="stage-date" ${dis} placeholder="dd/mm/aaaa hh:mm" value="${s.date||''}">`;
+    html += `<label>Detalhes do Retorno</label><textarea id="stage-details" rows="2" ${dis} placeholder="Conferência, condição no recebimento...">${s.details||''}</textarea>`;
+    html += wrapEnd;
+  }
+
+  document.getElementById('rep-det-stage-fields').innerHTML = html;
+}
+
+function salvarEdicaoReparo(){
+  const repId = document.getElementById('rep-det-id').value;
+  const rep = db.repairs.find(r=>r.id===repId); if(!rep) return;
+  if(rep.status==='Concluído') return alert('Reparo concluído: edição bloqueada (apenas visualização).');
+
+  const viewIndex = parseInt(document.getElementById('rep-det-viewIndex').value);
+  if(viewIndex !== rep.stageIndex) return alert('Edição permitida apenas na etapa atual.');
+
+  rep.provider = document.getElementById('rep-det-fornecedor').value.trim() || rep.provider;
+  rep.osRef = document.getElementById('rep-det-os').value.trim();
+  rep.leadRepair = parseInt(document.getElementById('rep-det-lead').value) || 0;
+  rep.costEst = parseFloat(document.getElementById('rep-det-custo').value) || 0;
+  rep.problem = document.getElementById('rep-det-problema').value.trim();
+  rep.notes = document.getElementById('rep-det-obs').value.trim();
+
+  const s = rep.stages[rep.stageIndex];
+  const details = document.getElementById('stage-details');
+  if(details) s.details = details.value.trim();
+
+  const date = document.getElementById('stage-date');
+  if(date) s.date = date.value.trim();
+
+  const report = document.getElementById('stage-report');
+  if(report) s.report = report.value.trim();
+
+  const approvedBy = document.getElementById('stage-approvedBy');
+  if(approvedBy) s.approvedBy = approvedBy.value.trim();
+
+  const decision = document.getElementById('stage-decision');
+  if(decision) s.decision = decision.value;
+
+  const dateStart = document.getElementById('stage-dateStart');
+  if(dateStart) s.dateStart = dateStart.value.trim();
+
+  const dateEnd = document.getElementById('stage-dateEnd');
+  if(dateEnd) s.dateEnd = dateEnd.value.trim();
+
+  saveDB();
+  abrirDetalheReparo(repId, rep.stageIndex);
+}
+
+function canAdvanceStage(rep){
+  const idx = rep.stageIndex;
+  const s = rep.stages[idx];
+
+  if(idx===1){
+    if(!(s.date && s.date.length>=4) && !(s.report && s.report.length>=5))
+      return { ok:false, msg:'Preencha ao menos a data da peritagem ou o laudo.' };
+  }
+  if(idx===2){
+    if(!s.decision) return { ok:false, msg:'Informe a decisão (Aprovado/Reprovado) ou use “Aprovar (Auto)”.' };
+    if(s.decision==='Reprovado') return { ok:false, msg:'Decisão está como Reprovado. Ajuste para Aprovado para avançar.' };
+  }
+  if(idx===3){
+    if(!(s.dateStart && s.dateStart.length>=4) && !(s.details && s.details.length>=5))
+      return { ok:false, msg:'Informe início da execução ou detalhes do serviço.' };
+  }
+  return { ok:true, msg:'' };
+}
+
+function avancarEtapaReparo(){
+  const repId = document.getElementById('rep-det-id').value;
+  const rep = db.repairs.find(r=>r.id===repId); if(!rep) return;
+  if(rep.status==='Concluído') return alert('Reparo já concluído.');
+
+  const vIndex = parseInt(document.getElementById('rep-det-viewIndex').value);
+  if(vIndex !== rep.stageIndex) return alert('Para avançar, selecione a etapa atual.');
+
+  salvarEdicaoReparo();
+  const rep2 = db.repairs.find(r=>r.id===repId);
+  const v = canAdvanceStage(rep2);
+  if(!v.ok) return alert(v.msg);
+
+  const idx = rep2.stageIndex;
+  rep2.stages[idx].done = true;
+  if(idx < REPAIR_STAGES.length-1) rep2.stageIndex += 1;
+
+  saveDB();
+  abrirDetalheReparo(repId, rep2.stageIndex);
+}
+
+function aprovarEtapaReparo(){
+  const repId = document.getElementById('rep-det-id').value;
+  const rep = db.repairs.find(r=>r.id===repId); if(!rep) return;
+  if(rep.status==='Concluído') return alert('Reparo concluído.');
+  if(rep.stageIndex !== 2) return alert('“Aprovar (Auto)” só está disponível na etapa Aprovação.');
+
+  const vIndex = parseInt(document.getElementById('rep-det-viewIndex').value);
+  if(vIndex !== 2) return alert('Selecione a etapa Aprovação para aprovar.');
+
+  const s = rep.stages[2];
+  s.decision = 'Aprovado';
+  s.approvedBy = currentUser;
+  if(!s.date) s.date = new Date().toLocaleString();
+  s.done = true;
+  rep.stageIndex = 3;
+
+  registrarMovimento('Aprovação (Reparo)', rep.itemId, rep.qty||1, rep.id);
+  saveDB();
+  abrirDetalheReparo(repId, rep.stageIndex);
+}
+
+function canConcludeRepair(rep){
+  if(rep.stageIndex !== 4) return { ok:false, msg:'O reparo só pode ser concluído na etapa Retorno.' };
+  const allPrevDone = rep.stages.slice(0,4).every(s=>s.done===true);
+  if(!allPrevDone) return { ok:false, msg:'Para concluir, todas as etapas anteriores devem estar concluídas.' };
+  const s = rep.stages[4];
+  if(!(s.date && s.date.length>=4)) return { ok:false, msg:'Informe a data do retorno para concluir.' };
+  return { ok:true, msg:'' };
+}
+
+function concluirRetornoReparo(){
+  const repId = document.getElementById('rep-det-id').value;
+  const rep = db.repairs.find(r=>r.id===repId); if(!rep) return;
+  if(rep.status==='Concluído') return alert('Reparo já concluído.');
+
+  const vIndex = parseInt(document.getElementById('rep-det-viewIndex').value);
+  if(vIndex !== rep.stageIndex) return alert('Selecione a etapa atual (Retorno) para concluir.');
+
+  salvarEdicaoReparo();
+  const rep2 = db.repairs.find(r=>r.id===repId);
+  const v = canConcludeRepair(rep2);
+  if(!v.ok) return alert(v.msg);
+
+  rep2.stages[4].done = true;
+  rep2.status = 'Concluído';
+  rep2.concludedAt = rep2.stages[4].date || new Date().toLocaleString();
+  rep2.concludedBy = currentUser;
+
+  const item = db.items.find(i=>i.id===rep2.itemId);
+  if(item){
+    item.stock = Number(item.stock ?? 0) + Number(rep2.qty ?? 1);
+    registrarMovimento('Entrada (Retorno Reparo)', item.id, Number(rep2.qty ?? 1), rep2.id);
+  }
+
+  saveDB();
+  abrirDetalheReparo(repId, 4);
+  alert('Reparo concluído e item retornado ao estoque.');
+}
+
+function updateRepairButtons(rep, viewIndex){
+  const btnSave = document.getElementById('btn-salvar-reparo');
+  const btnApprove = document.getElementById('btn-aprovar-etapa');
+  const btnAv = document.getElementById('btn-avancar-etapa');
+  const btnCon = document.getElementById('btn-concluir-reparo');
+  const hint = document.getElementById('rep-det-hint');
+
+  btnApprove.style.display = 'none';
+  btnCon.style.display = 'none';
+  btnAv.style.display = 'inline-block';
+  btnSave.style.display = 'inline-block';
+
+  if(rep.status==='Concluído'){
+    btnApprove.style.display = 'none';
+    btnCon.style.display = 'none';
+    btnAv.style.display = 'none';
+    btnSave.style.display = 'none';
+    hint.textContent = `Reparo concluído por ${rep.concludedBy || '—'} em ${rep.concludedAt || '—'}. Clique nas etapas para visualizar os registros.`;
+    return;
+  }
+
+  if(viewIndex !== rep.stageIndex){
+    btnAv.style.display = 'none';
+    btnCon.style.display = 'none';
+    btnApprove.style.display = 'none';
+    btnSave.style.display = 'none';
+    hint.textContent = 'Modo visualização: selecione a etapa atual para editar/avançar.';
+    return;
+  }
+
+  if(rep.stageIndex === 2){
+    btnApprove.style.display = 'inline-block';
+    hint.textContent = 'Aprovação: use “Aprovar (Auto)” para registrar usuário e avançar para Execução.';
+  } else if(rep.stageIndex === 4){
+    btnAv.style.display = 'none';
+    btnCon.style.display = 'inline-block';
+    hint.textContent = 'Retorno: informe a data do retorno e conclua (somente se todas as etapas anteriores estiverem concluídas).';
+  } else {
+    const prox = REPAIR_STAGES[rep.stageIndex+1];
+    hint.textContent = `Avance para a próxima etapa: ${prox}.`;
+  }
+}
+
+/* =========================
+   DASHBOARD: GRÁFICOS (Canvas)
+   ========================= */
+function resetDashboardFilters(){
+  const a = document.getElementById('dash-filter-item');
+  const b = document.getElementById('dash-filter-crit');
+  const c = document.getElementById('dash-filter-rep-stage');
+  const d = document.getElementById('dash-filter-rep-status');
+  if(a) a.value = 'ALL';
+  if(b) b.value = 'ALL';
+  if(c) c.value = 'ALL';
+  if(d) d.value = 'ATIVOS';
+  renderDashboard();
+}
+
+function setupCanvas(id, height=260){
+  const canvas = document.getElementById(id);
+  if(!canvas) return null;
+  const parent = canvas.parentElement;
+  const w = Math.max(300, parent.clientWidth - 2);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(w * dpr);
+  canvas.height = Math.floor(height * dpr);
+  canvas.style.height = height + 'px';
+  canvas.style.width = w + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return { ctx, w, h: height };
+}
+
+function drawEmpty(ctx, w, h, msg){
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = '#666';
+  ctx.font = '14px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillText(msg || 'Sem dados', w/2, h/2);
+}
+
+function drawPie(id, slices){
+  const c = setupCanvas(id);
+  if(!c) return;
+  const {ctx,w,h} = c;
+  ctx.clearRect(0,0,w,h);
+  const total = slices.reduce((a,s)=>a+(Number(s.value)||0),0);
+  if(total<=0) return drawEmpty(ctx,w,h,'Sem dados para o filtro');
+
+  const cx = w*0.35, cy = h*0.5;
+  const r = Math.min(w,h)*0.32;
+
+  let ang = -Math.PI/2;
+  slices.forEach(s=>{
+    const val = Number(s.value)||0;
+    const a2 = ang + (val/total)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,ang,a2);
+    ctx.closePath();
+    ctx.fillStyle = s.color;
+    ctx.fill();
+    ang = a2;
+  });
+
+  ctx.font = '12px Segoe UI';
+  ctx.fillStyle = '#333';
+  ctx.textAlign = 'left';
+  let y = h*0.25;
+  slices.forEach(s=>{
+    const val = Number(s.value)||0;
+    const pct = ((val/total)*100).toFixed(0);
+    ctx.fillStyle = s.color;
+    ctx.fillRect(w*0.62, y-10, 10, 10);
+    ctx.fillStyle = '#333';
+    ctx.fillText(`${s.label}: ${val} (${pct}%)`, w*0.62+16, y);
+    y += 18;
+  });
+}
+
+function drawStackedBar(id, values, colors){
+  const c = setupCanvas(id);
+  if(!c) return;
+  const {ctx,w,h} = c;
+  ctx.clearRect(0,0,w,h);
+  const total = values.reduce((a,v)=>a+(Number(v)||0),0);
+  if(total<=0) return drawEmpty(ctx,w,h,'Nenhum item abaixo do mínimo (filtro)');
+
+  const x0 = 24, y0 = h*0.45, barW = w-48, barH = 34;
+  let x = x0;
+  values.forEach((v,ix)=>{
+    const val = Number(v)||0;
+    const segW = (val/total)*barW;
+    ctx.fillStyle = colors[ix] || '#999';
+    ctx.fillRect(x, y0, segW, barH);
+    if(segW>40){
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 12px Segoe UI';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(val), x + segW/2, y0+22);
+    }
+    x += segW;
+  });
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.strokeRect(x0,y0,barW,barH);
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 14px Segoe UI';
+  ctx.textAlign = 'left';
+  ctx.fillText(`Total abaixo do mínimo: ${total}`, x0, y0-12);
+}
+
+function drawBar(id, labels, values, colors, opts={}){
+  const c = setupCanvas(id);
+  if(!c) return;
+  const {ctx,w,h} = c;
+  ctx.clearRect(0,0,w,h);
+
+  const n = labels.length;
+  const maxVal = Math.max(0, ...values.map(v=>Number(v)||0));
+  if(n===0 || maxVal<=0) return drawEmpty(ctx,w,h,'Sem dados para o filtro');
+
+  const padL = 40, padR = 16, padT = 16, padB = opts.rotateX ? 56 : 36;
+  const chartW = w - padL - padR;
+  const chartH = h - padT - padB;
+  const gap = Math.max(6, chartW/(n*6));
+  const barW = Math.max(12, (chartW - gap*(n-1))/n);
+
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT+chartH);
+  ctx.lineTo(padL+chartW, padT+chartH);
+  ctx.stroke();
+
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '12px Segoe UI';
+  ctx.textAlign = 'right';
+  for(let t=0;t<=3;t++){
+    const v = (maxVal/3)*t;
+    const y = padT+chartH - (v/maxVal)*chartH;
+    ctx.fillText(Math.round(v).toString(), padL-6, y+4);
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(padL+chartW, y);
+    ctx.stroke();
+  }
+
+  ctx.textAlign = 'center';
+  labels.forEach((lab,i)=>{
+    const val = Number(values[i])||0;
+    const bh = (val/maxVal)*chartH;
+    const x = padL + i*(barW+gap);
+    const y = padT + chartH - bh;
+    ctx.fillStyle = Array.isArray(colors) ? (colors[i]||colors[0]||'#7C9640') : (colors||'#7C9640');
+    ctx.fillRect(x,y,barW,bh);
+
+    ctx.fillStyle = '#111827';
+    ctx.font = 'bold 11px Segoe UI';
+    const suffix = opts.suffix || '';
+    ctx.fillText(`${val}${suffix}`, x+barW/2, y-4);
+
+    ctx.fillStyle = '#374151';
+    ctx.font = '11px Segoe UI';
+    if(opts.rotateX){
+      ctx.save();
+      ctx.translate(x+barW/2, padT+chartH+20);
+      ctx.rotate(-Math.PI/4);
+      ctx.textAlign = 'right';
+      ctx.fillText(lab, 0, 0);
+      ctx.restore();
+    } else {
+      ctx.fillText(lab, x+barW/2, padT+chartH+18);
+    }
+  });
+}
+
+/* =========================
+   RENDER
+   ========================= */
+function renderDashboard(){
+  const el = document.getElementById('dashboard-stats');
+  if(!el) return;
+
+  const fItem = document.getElementById('dash-filter-item')?.value || 'ALL';
+  const fCrit = document.getElementById('dash-filter-crit')?.value || 'ALL';
+  const fRepStage = document.getElementById('dash-filter-rep-stage')?.value || 'ALL';
+  const fRepStatus = document.getElementById('dash-filter-rep-status')?.value || 'ATIVOS';
+
+  const itemsFiltered = db.items.filter(it=>{
+    if(fItem !== 'ALL' && it.id !== fItem) return false;
+    if(fCrit !== 'ALL' && it.crit !== fCrit) return false;
+    return true;
+  });
+
+  let totalQty = 0;
+  let abaixoMin = 0;
+  let normal = 0, risco = 0, abaixo = 0;
+  const abaixoByCrit = { 'Alta':0, 'Média':0, 'Baixa':0 };
+  const deficits = [];
+
+  itemsFiltered.forEach(it=>{
+    const r = getRegrasItem(it.id);
+    totalQty += Number(r.stock||0);
+    const isBelow = r.futureStock < r.min;
+    if(isBelow){
+      abaixoMin++;
+      abaixoByCrit[it.crit] = (abaixoByCrit[it.crit]||0) + 1;
+      const def = Math.max(0, r.min - r.futureStock);
+      deficits.push({ id: it.id, crit: it.crit, def });
+      if(r.stock >= r.min) risco++; else abaixo++;
+    } else {
+      normal++;
+    }
+  });
+
+  const fila = db.sa.filter(s=>s.status!=='Atendida' && s.status!=='Cancelada').length;
+  const pcsAbertos = db.pc.filter(p=>p.status!=='Concluído').length;
+
+  let repairs = [...db.repairs];
+  if(fRepStatus === 'ATIVOS') repairs = repairs.filter(r=>r.status!=='Concluído');
+  if(fRepStatus === 'CONCLUIDOS') repairs = repairs.filter(r=>r.status==='Concluído');
+  if(fRepStage !== 'ALL') repairs = repairs.filter(r=>REPAIR_STAGES[r.stageIndex]===fRepStage);
+
+  const reparosAtivos = db.repairs.filter(r=>r.status!=='Concluído').length;
+  const stagesCount = { 'Envio':0,'Peritagem':0,'Aprovação':0,'Execução':0,'Retorno':0 };
+  repairs.forEach(r=>{ stagesCount[REPAIR_STAGES[r.stageIndex]] = (stagesCount[REPAIR_STAGES[r.stageIndex]]||0)+1; });
+
+  const overdueList = [];
+  let overdueCount = 0;
+  db.repairs.filter(r=>r.status!=='Concluído').forEach(r=>{
+    const lead = Number(r.leadRepair||0);
+    if(!(lead>0)) return;
+    const sendTs = Number(r.sendTs || 0);
+    if(!(sendTs>0)) return;
+    const days = Math.floor((Date.now() - sendTs)/86400000);
+    const late = days - lead;
+    if(late>0){
+      overdueCount++;
+      overdueList.push({ id:r.id, late });
+    }
+  });
+  overdueList.sort((a,b)=>b.late-a.late);
+
+  el.innerHTML = `
+    <div class="stat-box ${abaixoMin>0?'alert':''}"><h4>Itens < Mínimo (filtro)</h4><div class="val">${abaixoMin}</div></div>
+    <div class="stat-box"><h4>Saldo total do estoque (filtro)</h4><div class="val">${totalQty}</div></div>
+    <div class="stat-box"><h4>SA's em Fila / Pendência</h4><div class="val">${fila}</div></div>
+    <div class="stat-box"><h4>Pedidos de Compra Abertos</h4><div class="val">${pcsAbertos}</div></div>
+    <div class="stat-box"><h4>Reparos Ativos</h4><div class="val">${reparosAtivos}</div></div>
+    <div class="stat-box ${overdueCount>0?'alert':''}"><h4>Reparos Atrasados</h4><div class="val">${overdueCount}</div></div>
+  `;
+
+  const focus = document.getElementById('dash-item-focus');
+  if(focus){
+    if(fItem !== 'ALL'){
+      const it = db.items.find(x=>x.id===fItem);
+      const r = getRegrasItem(fItem);
+      const st = (r.futureStock < r.min) ? ((r.stock<r.min)?'Abaixo do mínimo':'Risco Futuro') : 'Normal';
+      focus.style.display = 'block';
+      focus.innerHTML = `
+        <div><b>Item selecionado:</b> ${it.id} - ${it.desc}</div>
+        <div class="small" style="margin-top:6px">
+          Criticidade: <b>${it.crit}</b> • Saldo: <b>${r.stock}</b> • Fila: <b>${r.inQueue}</b> • Em PC: <b>${r.inPC}</b> • Saldo Futuro: <b>${r.futureStock}</b> • Mín/Máx: <b>${r.min}/${r.max}</b> • Status: <b>${st}</b>
+        </div>
+      `;
+    } else {
+      focus.style.display = 'none';
+      focus.innerHTML = '';
+    }
+  }
+
+  drawStackedBar('chart-belowmin-crit', [abaixoByCrit['Alta'], abaixoByCrit['Média'], abaixoByCrit['Baixa']], ['#dc2626','#d97706','#0ea5e9']);
+
+  drawPie('chart-pie-below-ok', [
+    {label:'Abaixo do mínimo', value: abaixoMin, color:'#dc2626'},
+    {label:'Dentro do mínimo', value: Math.max(0, itemsFiltered.length-abaixoMin), color:'#16a34a'}
+  ]);
+
+  drawBar('chart-status3', ['Normal','Risco Futuro','Abaixo'], [normal, risco, abaixo], ['#16a34a','#d97706','#dc2626']);
+
+  deficits.sort((a,b)=>b.def-a.def);
+  const top = deficits.slice(0,10);
+  drawBar('chart-top-deficit', top.map(x=>x.id), top.map(x=>x.def), top.map(x=> x.crit==='Alta'?'#dc2626':(x.crit==='Média'?'#d97706':'#0ea5e9')), { rotateX:true });
+
+  drawBar('chart-repair-stages', ['Envio','Peritagem','Aprovação','Execução','Retorno'],
+          ['Envio','Peritagem','Aprovação','Execução','Retorno'].map(s=>stagesCount[s]||0),
+          ['#7C9640','#0ea5e9','#d97706','#414042','#16a34a']);
+
+  const topLate = overdueList.slice(0,10);
+  drawBar('chart-repair-overdue', topLate.map(x=>x.id), topLate.map(x=>x.late), topLate.map(_=>'#dc2626'), { rotateX:true, suffix:'d' });
+}
+
+function renderEstoque(){
+  const tbody = document.getElementById('table-estoque');
+  if(!tbody) return;
+  let html='';
+  db.items.forEach(it=>{
+    const r = getRegrasItem(it.id);
+    const check = itemPrecisaRC(it.id);
+
+    let status = '<span class="badge bg-ok">Normal</span>';
+    if(r.futureStock < r.min){
+      status = (r.stock >= r.min) ? '<span class="badge bg-warn">Risco Futuro</span>' : '<span class="badge bg-danger">Abaixo Mínimo</span>';
+    }
+
+    let acao = '';
+    if(r.futureStock < r.min){
+      if(check.ok){
+        acao = `<button class="btn btn-sm btn-outline" onclick="gerarRC('${it.id}')">Gerar RC</button>`;
+      } else {
+        acao = `<span class="small">${check.reason || '—'}</span>`;
+      }
+    } else {
+      acao = '<span class="small">—</span>';
+    }
+
+    html += `<tr>
+      <td><b>${it.id}</b></td><td>${it.desc}</td><td>${it.crit}</td>
+      <td><b>${r.stock}</b></td><td style="color:var(--warn)">${r.inQueue}</td>
+      <td style="color:var(--info)">${r.inPC}</td><td><b>${r.futureStock}</b></td>
+      <td>${r.min} / ${r.max}</td><td>${status}</td><td>${acao}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+function renderMovimentacoes(){
+  const tbody = document.getElementById('table-movimentacoes');
+  if(!tbody) return;
+  let html='';
+  db.movements.slice(0,120).forEach(m=>{
+    const item = db.items.find(i=>i.id===m.itemId);
+    html += `<tr>
+      <td>${m.date}</td><td>${m.tipo}</td><td>${item?item.desc:m.itemId}</td><td><b>${m.qtd}</b></td><td>${m.origem}</td><td>${m.user||'—'}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+function renderSA(){
+  const tbody = document.getElementById('table-sa');
+  if(!tbody) return;
+  let html='';
+  const sorted = [...db.sa].sort((a,b)=>{ const p={'Alta':1,'Média':2,'Baixa':3}; return (p[a.prioridade]-p[b.prioridade]) || (a.timestamp-b.timestamp); });
+  sorted.forEach(sa=>{
+    let cls='bg-muted';
+    if(sa.status==='Aberta') cls='bg-info';
+    if(sa.status==='Parcial' || sa.status==='Aguardando Estoque') cls='bg-warn';
+    if(sa.status==='Atendida') cls='bg-ok';
+    const btn = (sa.status!=='Atendida' && sa.status!=='Cancelada')
+      ? `<button class="btn btn-sm btn-primary" onclick="abrirAtendimentoSA('${sa.id}')">Dar Baixa</button>`
+      : '';
+    html += `<tr>
+      <td><b>${sa.id}</b></td><td>${sa.date.split(' ')[0]}</td><td>${sa.solicitante}</td>
+      <td>${sa.prioridade}</td><td><span class="badge ${cls}">${sa.status}</span></td><td>${btn}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+function renderCompras(){
+  const trc = document.getElementById('table-rc');
+  if(trc){
+    let html='';
+    db.rc.forEach(rc=>{
+      const badge = rc.status.includes('Aprovada') ? 'bg-ok' : 'bg-warn';
+      const btn = rc.status==='Pendente' ? `<button class="btn btn-sm btn-primary" onclick="aprovarRC('${rc.id}')">Aprovar & Gerar PC</button>` : '';
+      const desc = rc.items.map(i=>`${i.itemId} (${i.qtdReq}x)`).join(', ');
+      html += `<tr><td><b>${rc.id}</b></td><td>${rc.date.split(' ')[0]}</td>
+        <td style="max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${desc}">${desc}</td>
+        <td><span class="badge ${badge}">${rc.status}</span></td><td>${btn}</td></tr>`;
+    });
+    trc.innerHTML = html;
+  }
+
+  const tpc = document.getElementById('table-pc');
+  if(tpc){
+    let html='';
+    db.pc.forEach(pc=>{
+      const badge = pc.status==='Concluído' ? 'bg-ok' : 'bg-info';
+      const btn = pc.status!=='Concluído' ? `<button class="btn btn-sm btn-secondary" onclick="abrirRecebimentoPC('${pc.id}')">Receber Material</button>` : '';
+      html += `<tr><td><b>${pc.id}</b></td><td>${pc.rcId}</td><td><span class="badge ${badge}">${pc.status}</span></td><td>${btn}</td></tr>`;
+    });
+    tpc.innerHTML = html;
+  }
+}
+
+function renderReparos(){
+  const tAtivos = document.getElementById('table-reparo');
+  if(tAtivos){
+    let html='';
+    db.repairs.filter(r=>r.status!=='Concluído').forEach(rep=>{
+      const item = db.items.find(i=>i.id===rep.itemId);
+      const stage = REPAIR_STAGES[rep.stageIndex] || '—';
+      html += `<tr>
+        <td><b>${rep.id}</b></td>
+        <td>${item?item.desc:rep.itemId} (Qtd: ${rep.qty||1})</td>
+        <td>${rep.provider||''}</td>
+        <td><span class="badge bg-warn">${stage}</span></td>
+        <td>${(rep.sendDate||rep.createdAt||'').split(' ')[0]}</td>
+        <td><span class="badge bg-info">Ativo</span></td>
+        <td><button class="btn btn-sm btn-outline" onclick="abrirDetalheReparo('${rep.id}')">Detalhar</button></td>
+      </tr>`;
+    });
+    tAtivos.innerHTML = html;
+  }
+
+  const tHist = document.getElementById('table-reparo-hist');
+  if(tHist){
+    let html='';
+    db.repairs.forEach(rep=>{
+      const item = db.items.find(i=>i.id===rep.itemId);
+      const stage = REPAIR_STAGES[rep.stageIndex] || '—';
+      const finalStage = rep.status==='Concluído' ? 'Retorno' : stage;
+      const badge = rep.status==='Concluído' ? 'bg-ok' : 'bg-warn';
+      html += `<tr>
+        <td><b>${rep.id}</b></td>
+        <td>${item?item.desc:rep.itemId} (Qtd: ${rep.qty||1})</td>
+        <td>${rep.provider||''}</td>
+        <td><span class="badge ${badge}">${finalStage}</span></td>
+        <td>${(rep.sendDate||rep.createdAt||'').split(' ')[0]}</td>
+        <td>${rep.concludedAt ? rep.concludedAt.split(' ')[0] : '—'}</td>
+        <td><span class="badge ${rep.status==='Concluído'?'bg-ok':'bg-info'}">${rep.status==='Concluído'?'Concluído':'Ativo'}</span></td>
+        <td><button class="btn btn-sm btn-outline" onclick="abrirDetalheReparo('${rep.id}')">Detalhar</button></td>
+      </tr>`;
+    });
+    tHist.innerHTML = html;
+  }
+}
+
+function preencherSelects(){
+  const saSel = document.getElementById('sa-item');
+  const repSel = document.getElementById('rep-item');
+  const dashSel = document.getElementById('dash-filter-item');
+
+  const options = db.items.map(i=>`<option value="${i.id}">${i.id} - ${i.desc} (Estoque: ${i.stock})</option>`).join('');
+  if(saSel) saSel.innerHTML = options;
+  if(repSel) repSel.innerHTML = options;
+
+  if(dashSel){
+    const current = dashSel.value || 'ALL';
+    const optsDash = [`<option value="ALL">Todos os itens</option>`].concat(
+      db.items.map(i=>`<option value="${i.id}">${i.id} - ${i.desc}</option>`)
+    ).join('');
+    dashSel.innerHTML = optsDash;
+    dashSel.value = ([...dashSel.options].some(o=>o.value===current)) ? current : 'ALL';
+  }
+}
+
+function atualizarTelas(){
+  renderEstoque();
+  renderSA();
+  renderCompras();
+  renderReparos();
+  renderMovimentacoes();
+  preencherSelects();
+  renderDashboard();
+}
+
+/* =========================
+   UI / NAVEGAÇÃO
+   ========================= */
+function switchMain(main, ev){
+  document.querySelectorAll('#mainNav button').forEach(b=>b.classList.remove('active'));
+  if(ev && ev.target) ev.target.classList.add('active');
+
+  document.querySelectorAll('.subnav').forEach(s=>s.classList.remove('active'));
+  document.getElementById('subnav-'+main).classList.add('active');
+
+  const defaultSub = { inicio:'dashboard', estoque:'itens', compras:'gerar', reparo:'enviar' }[main];
+  switchSub(main, defaultSub);
+}
+
+function switchSub(main, sub, ev){
+  const subnav = document.getElementById('subnav-'+main);
+  if(subnav){
+    subnav.querySelectorAll('.subbtn').forEach(b=>b.classList.remove('active'));
+    if(ev && ev.target) ev.target.classList.add('active');
+  }
+
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const el = document.getElementById(`view-${main}-${sub}`);
+  if(el) el.classList.add('active');
+
+  atualizarTelas();
+}
+
+function fecharModal(id){ document.getElementById(id).classList.remove('active'); }
+
+window.addEventListener('resize', ()=>{
+  const dash = document.getElementById('view-inicio-dashboard');
+  if(dash && dash.classList.contains('active')) renderDashboard();
+});
+
+window.onload = ()=>{ initDB(); };
+</script>
+</body>
+</html>
